@@ -1,7 +1,8 @@
+__docformat__ = 'restructedtext en'
+
 import numpy
 import theano
 import theano.tensor as T
-
 
 from six.moves import cPickle as pickle
 import gzip
@@ -125,7 +126,7 @@ def load_data(dataset):
         if os.path.isfile(new_path) or data_file == 'mnist.pkl.gz':
             dataset = new_path
 
-    if (not os.path.isfile(new_path)) or data_file == 'mnist.pkl.gz':
+    if (not os.path.isfile(dataset)) and data_file == 'mnist.pkl.gz':
         from six.moves import urllib
         origin = (
             'http://www.iro.umontreal.ca/~lisa/deep/data/mnist/mnist.pkl.gz'
@@ -133,7 +134,7 @@ def load_data(dataset):
         print('Downloading data from %s' %origin)
         urllib.request.urlretrieve(origin, dataset)
 
-    print('... loading data!')
+    print('Loading data ...')
 
     # Load the dataset
     with gzip.open(dataset, 'rb') as f:
@@ -188,7 +189,6 @@ def sgd_optimizations_mnist (learning_rate = 0.13, n_epochs = 1000,
     dataset       : string, the path of the MNIST dataset file from,
                 http://www.iro.umontreal.ca/~lisa/deep/data/mnist/mnist.pkl.gz
     """
-
     datasets = load_data(dataset)
 
     train_set_x, train_set_y = datasets[0]
@@ -196,15 +196,15 @@ def sgd_optimizations_mnist (learning_rate = 0.13, n_epochs = 1000,
     test_set_x , test_set_y  = datasets[2]
 
     # compute the number of mini-batches for training, validation and testing
-    n_train_batches = train_set_x.get_value(borrow = True).shape[0]
-    n_valid_batches = valid_set_x.get_value(borrow = True).shape[0]
-    n_test_batches  = test_set_x.get_value(borrow = True).shape[0]
+    n_train_batches = train_set_x.get_value(borrow = True).shape[0] // batch_size
+    n_valid_batches = valid_set_x.get_value(borrow = True).shape[0] // batch_size
+    n_test_batches  = test_set_x.get_value(borrow = True).shape[0] // batch_size
 
     #####################
     # BUILD ACTUAL MODEL #
     #####################
 
-    print (' Building the model ...')
+    print ('Building the model ...')
 
     # allocate symbolic variables for the data
     index = T.lscalar()
@@ -291,7 +291,7 @@ def sgd_optimizations_mnist (learning_rate = 0.13, n_epochs = 1000,
 
     done_looping = False
     epoch = 0
-    while(epoch < n_epochs) and (not done_looping):
+    while (epoch < n_epochs) and (not done_looping):
         epoch = epoch + 1
         for minibatch_index in range(n_train_batches):
 
@@ -317,8 +317,7 @@ def sgd_optimizations_mnist (learning_rate = 0.13, n_epochs = 1000,
 
                 if this_validation_loss < best_validation_loss:
                     # improve patience if loss improvement is good enough
-                    if this_validation_loss < best_validation_loss *\
-                                            improvement_threshold:
+                    if this_validation_loss < best_validation_loss * improvement_threshold:
                         patience = max(patience, iter * patience_increase)
 
                     best_validation_loss = this_validation_loss
@@ -362,7 +361,7 @@ def sgd_optimizations_mnist (learning_rate = 0.13, n_epochs = 1000,
         epoch, 1. * epoch / (end_time - start_time) ))
 
     print (('The code for file ' + os.path.split(__file__)[1] +
-            'ran for %.1fs') %((end_time - start_time)))
+            ' ran for %.1fs' % ((end_time - start_time))), file=sys.stderr)
 
 
 def predict():
